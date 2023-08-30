@@ -2,6 +2,8 @@
 
 Author: Kristi Manasil
 
+Test of commit
+
 Repository for R/Python Exercise 1 from the course: INFO 523 - Data Mining and Discovery taught by Dr. Greg Chism
 
 ## Instructions
