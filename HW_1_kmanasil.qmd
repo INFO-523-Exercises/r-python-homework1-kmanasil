@@ -1,0 +1,319 @@
+---
+title: "HW_1_kmanasil"
+author: "Kristi Manasil github ID: kmanasil"
+format: html
+editor: visual
+---
+
+## Homework 1
+
+## Installing/Loading
+
+```{r, eval=TRUE, echo=TRUE, message=FALSE, error=FALSE}
+if(!require("pacman")) #if pacman isnt installed
+  install.packages("pacman") #then install pacman 
+
+library("pacman")
+p_load(tidyverse, dlookr, ggpubr, DMwR2, GGally, Hmisc, palmerpenguins)
+
+```
+
+## Load Data
+
+```{r}
+data(algae, package="DMwR2")
+
+algae |> glimpse()
+```
+
+# **Central tendency: mean, median, mode**
+
+```{r}
+# find the mean of row a1
+algae$a1 |> mean()
+```
+
+```{r}
+# find the median for same variable
+algae$a1 |> median() 
+```
+
+## **Mode**
+
+```{r}
+# old school fucntion to find mode on unimodal data
+Mode <- function(x, na.rm=FALSE){
+if(na.rm) x<-x[!is.na(x)]
+ux <- unique (x)
+return (ux[which.max(tabulate(match(x, ux)))])
+}
+
+algae$a2 |> Mode()
+```
+
+At first I wasn't sure if the mode was working correctly, but Zero is the most common number as the rest of the numbers have decimal values.
+
+```{r}
+# working with central values
+# Numerical value
+algae$a1 |> centralValue()
+```
+
+```{r}
+# Nominal variable
+algae$speed |> centralValue()
+```
+
+# **Statistics of spread (variation)**
+
+```{r}
+# finding the variance of variable
+algae$a1 |> var()
+```
+
+## **Standard deviation**
+
+```{r}
+# finding the standard deviation
+algae$a1 |> sd()
+```
+
+## **Range**
+
+```{r}
+# find the min and max values (range) in the data
+algae$a1 |> range()
+```
+
+```{r}
+# just the max value of range
+algae$a1 |> max()
+```
+
+```{r}
+# just the min value or range
+algae$a1 |> min()
+```
+
+```{r}
+# the range between the 1st and 3rd quartile
+algae$a1 |> IQR()
+```
+
+## **Quantiles**
+
+```{r}
+# show quantiles
+algae$a1 |> quantile()
+```
+
+```{r}
+# find specific quantiles
+# below is finding the quantile at 20% and 80%
+algae$a1 |> quantile(probs = c(0.2, 0.8))
+```
+
+# **Missing values**
+
+```{r}
+# load library
+library(purrr)
+
+# Compute the total number of NA values in the dataset
+nas <- algae %>% 
+  purrr::map_dbl(~sum(is.na(.))) %>% 
+  sum()
+
+cat("The dataset contains ", nas, "NA values. \n")
+```
+
+```{r}
+# Compute the number of incomplete rows in the dataset
+# I wouldn't do it this way
+# incomplete_rows <- algae %>% 
+  # summarise_all(~!complete.cases(.)) %>%
+  # nrow()
+```
+
+```{r}
+# Compute the number of incomplete rows - this is how I would do it
+incomplete_rows <- sum(!complete.cases(algae))
+incomplete_rows
+```
+
+```{r}
+# so this is different than the exercise but the answer is accurate
+cat("The dataset contains ", incomplete_rows, "(out of ", nrow(algae),") incomplete rows. \n")
+```
+
+# **Summaries of a dataset**
+
+## **Base R's `summary()`**
+
+```{r}
+# summarize the dataset algae
+algae |> summary()
+```
+
+## **`Hmisc`'s `describe()`**
+
+```{r}
+# read in data
+data("penguins")
+
+# descrice the penguins df
+penguins |> Hmisc::describe()
+```
+
+## **`dlookr`'s `describe()`**
+
+```{r}
+# use dlookr to describe data instead
+penguins |> dlookr::describe()
+```
+
+# **Summaries on a subset of data**
+
+`dplyr`'s `summarise()` and `summarise_all()`, or use them with `select()` and `group_by()` to create summaries on\
+subset of data. Note: `summarise()` = `summarize()`
+
+```{r}
+# summarize the NO3 in algae after remove the na values
+algae |> summarise(avgNO3 = mean(NO3, na.rm=TRUE),
+                   medA1 = median(a1))
+```
+
+`summarise_all()` can be used to apply any function that produces a scalar value to any column of a data\
+frame table.
+
+```{r}
+# summarise all the columns between mxPH and Cl to show both mean and median values
+algae |>
+  select(mxPH:Cl) |>
+  summarise_all(list(mean, median), na.rm = TRUE)
+```
+
+```{r}
+# this will error for summarise as we do not define the functions we want
+algae |>
+  select(a1:a7) |>
+  summarise_all(funs(var))
+```
+
+```{r}
+# use summarise to find min and max for columns a1 to a7 inclusive
+algae |>
+  select(a1:a7) |>
+  summarise_all(c("min", "max"))
+```
+
+## **Use `summarise()` with `group_by()`**
+
+```{r}
+algae |>
+  group_by(season, size) |>
+  summarise(nObs = n(), mA7 = median(a7))
+```
+
+```{r}
+# using group by to summarise penguins species by bill length after removing the na values
+penguins |> 
+  group_by(species) |>
+  summarise(var = var(bill_length_mm, na.rm = TRUE))
+```
+
+## **Aggregating data**
+
+Can be helpful for summary functions that don't return a scalar
+
+```{r}
+# group by to find quantiles of bill lenght for each species
+penguins |>
+  group_by(species) |>
+  reframe(var = quantile(bill_length_mm, na.rm = TRUE))
+```
+
+```{r}
+# using dlookr instead 
+penguins |>
+  group_by(species) |>
+  dlookr::describe(bill_length_mm)
+```
+
+# **\[Advanced\]**
+
+## **Getting to know your dataset:**
+
+1.  List data types of the attributes in your tidy dataset
+
+    I am not completely sure which dataset you are referring to so I am going to use the algae.
+
+    ```{r}
+    str(penguins)
+    ```
+
+2.  Check for skewness in data distribution in the attributes
+
+    I am going to use the mean, and median to check for normal distribution or if it skewed. I am using a2.
+
+    ```{r}
+    algae$a2 |> range()
+    ```
+
+    ```{r}
+    algae$a2 |> mean()
+    ```
+
+    ```{r}
+    algae$a2 |> median()
+    ```
+
+    The range goes from zero to just over 72 and the mean of rough 7.5 and median of only 3 indicate that this data is right skewed.
+
+3.  Check for correlations among attributes
+
+    Using Perason's to see the correlations between body mass and bill length.
+
+    ```{r}
+    # 
+    cor.test(penguins$bill_length_mm, penguins$body_mass_g, method="pearson")
+    ```
+
+4.  Examine the extent of missing data. What would be the best way to deal with the missing data in this case?
+
+```{r}
+# Compute the number of incomplete rows - this is how I would do it
+incomplete_rows <- sum(!complete.cases(penguins))
+
+# so this is different than the exercise but the answer is accurate
+cat("The dataset contains ", incomplete_rows, "(out of ", nrow(penguins),") incomplete rows. \n")
+```
+
+Since there are only 11 rows with NA values, I would remove these rows.
+
+```{r}
+# drop rows that contains na values
+penguins_no_na_values <- penguins %>% drop_na()
+```
+
+```{r}
+# or replace na with zero for numeric values
+penguins_replaced_na <- penguins
+penguins_replaced_na$bill_length_mm[is.na(penguins_replaced_na$bill_length_mm)] <- 0
+penguins_replaced_na$bill_depth_mm[is.na(penguins_replaced_na$bill_depth_mm)] <- 0
+penguins_replaced_na$flipper_length_mm[is.na(penguins_replaced_na$flipper_length_mm)] <- 0
+penguins_replaced_na$body_mass_g[is.na(penguins_replaced_na$body_mass_g)] <- 0
+```
+
+```{r}
+# then replace missing gender values with female
+penguins_replaced_na$sex[is.na(penguins_replaced_na$sex)] <- "female"
+```
+
+```{r}
+# Compute the number of incomplete rows - this is how I would do it
+incomplete_rows <- sum(!complete.cases(penguins_replaced_na))
+
+# so this is different than the exercise but the answer is accurate
+cat("The dataset contains ", incomplete_rows, "(out of ", nrow(penguins_replaced_na),") incomplete rows. \n")
+```
